@@ -135,6 +135,21 @@ private fun ExtraKeys(vm: TerminalViewModel, onOpenSettings: () -> Unit) {
         view()?.inputCodePoint(TerminalView.KEY_EVENT_SOURCE_VIRTUAL_KEYBOARD, c.code, false, false)
     }
 
+    // Quick answers for AI CLI prompts (Claude Code etc.): Enter accepts the highlighted option,
+    // "2" picks the second ("don't ask again"), Esc declines, Shift+Tab cycles the permission mode.
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .background(Color(0xFF1A1A1A))
+            .padding(top = 2.dp),
+        horizontalArrangement = Arrangement.spacedBy(2.dp),
+    ) {
+        val wide = Modifier.weight(1f)
+        ExtraKey("✓ Yes", wide, color = Color(0xFF1E5F2E)) { vm.terminal.write(byteArrayOf('\r'.code.toByte()), 0, 1) }
+        ExtraKey("2 Always", wide, color = Color(0xFF1E3A5F)) { vm.terminal.write(byteArrayOf('2'.code.toByte()), 0, 1) }
+        ExtraKey("✗ No", wide, color = Color(0xFF5F1E1E)) { view()?.handleKeyCode(KeyEvent.KEYCODE_ESCAPE, 0) }
+        ExtraKey("⇧TAB", wide) { view()?.handleKeyCode(KeyEvent.KEYCODE_TAB, KeyHandler.KEYMOD_SHIFT) }
+    }
     Row(
         Modifier
             .fillMaxWidth()
@@ -160,10 +175,16 @@ private fun ExtraKeys(vm: TerminalViewModel, onOpenSettings: () -> Unit) {
 }
 
 @Composable
-private fun ExtraKey(label: String, active: Boolean = false, onClick: () -> Unit) {
+private fun ExtraKey(
+    label: String,
+    modifier: Modifier = Modifier,
+    active: Boolean = false,
+    color: Color = Color(0xFF2A2A2A),
+    onClick: () -> Unit,
+) {
     Box(
-        Modifier
-            .background(if (active) MaterialTheme.colorScheme.primary else Color(0xFF2A2A2A))
+        modifier
+            .background(if (active) MaterialTheme.colorScheme.primary else color)
             .widthIn(min = 44.dp)
             .height(40.dp)
             .clickable(onClick = onClick),
