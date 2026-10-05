@@ -53,3 +53,4 @@ See `architecture.md` for the full design.
 - Reaching the PC from outside your LAN needs a VPN such as Tailscale/WireGuard; just use that address
   as the host.
 # remote-terminal
+# remote-terminal
