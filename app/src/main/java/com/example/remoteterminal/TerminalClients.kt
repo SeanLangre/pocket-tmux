@@ -18,9 +18,11 @@ private const val TAG = "Terminal"
 class SessionClient(
     private val context: Context,
     private val view: () -> TerminalView?,
+    private val onOutput: () -> Unit = {},
 ) : TerminalSessionClient {
     override fun onTextChanged(changedSession: TerminalSession) {
         view()?.onScreenUpdated()
+        onOutput()
     }
 
     override fun onTitleChanged(changedSession: TerminalSession) = Unit

@@ -1,6 +1,7 @@
 package com.example.remoteterminal
 
 import android.app.Application
+import android.content.Intent
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -36,7 +37,9 @@ class TerminalViewModel(app: Application) : AndroidViewModel(app) {
 
     var fontSizePx by mutableStateOf(0)
 
-    private val sessionClient = SessionClient(app) { terminalView }
+    private val notifier = PromptNotifier(app)
+    private lateinit var promptDetector: PromptDetector
+    private val sessionClient = SessionClient(app, { terminalView }, { promptDetector.onOutput() })
     val terminal = TerminalSession(TRANSCRIPT_ROWS, sessionClient)
     val connection = SshConnection(app, viewModelScope, terminal, keyManager, hostKeys)
 
@@ -44,6 +47,7 @@ class TerminalViewModel(app: Application) : AndroidViewModel(app) {
     var terminalView: TerminalView? = null
 
     init {
+        promptDetector = PromptDetector(terminal, notifier)
         if (config.isComplete) connection.start(config)
     }
 
@@ -65,10 +69,16 @@ class TerminalViewModel(app: Application) : AndroidViewModel(app) {
 
     /** Called when the app comes back to the foreground. */
     fun onForeground() {
+        promptDetector.inForeground = true
         if (config.isComplete && connection.state.value is ConnectionState.Reconnecting) connection.retryNow(config)
     }
 
+    fun onBackground() {
+        promptDetector.inForeground = false
+    }
+
     override fun onCleared() {
+        getApplication<Application>().stopService(Intent(getApplication(), KeepAliveService::class.java))
         connection.release()
         terminal.finishIfRunning()
     }
