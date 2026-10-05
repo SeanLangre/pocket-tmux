@@ -162,7 +162,7 @@ private fun ExtraKeys(vm: TerminalViewModel, onOpenSettings: () -> Unit) {
         ExtraKey("TAB") { sendKeyCode(KeyEvent.KEYCODE_TAB) }
         ExtraKey("CTRL", active = modifiers.ctrl) { modifiers.ctrl = !modifiers.ctrl }
         ExtraKey("ALT", active = modifiers.alt) { modifiers.alt = !modifiers.alt }
-        ExtraKey("^B") { vm.terminal.write(byteArrayOf(0x02), 0, 1) } // tmux prefix
+        ExtraKey("^C", color = Color(0xFF5F1E1E)) { vm.terminal.write(byteArrayOf(0x03), 0, 1) } // SIGINT
         ExtraKey("←") { sendKeyCode(KeyEvent.KEYCODE_DPAD_LEFT) }
         ExtraKey("↓") { sendKeyCode(KeyEvent.KEYCODE_DPAD_DOWN) }
         ExtraKey("↑") { sendKeyCode(KeyEvent.KEYCODE_DPAD_UP) }

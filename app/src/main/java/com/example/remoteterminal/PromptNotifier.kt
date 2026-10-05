@@ -134,6 +134,7 @@ class PromptDetector(
         const val TAIL_LINES = 12
         const val MAX_LENGTH = 160
         val PATTERNS = listOf(
+            Regex("""Approval required|Run command:""", RegexOption.IGNORE_CASE),
             Regex("""\(y/n\)|\[y/n]|\[Y/n]|\[y/N]""", RegexOption.IGNORE_CASE),
             Regex("""\bDo you want to\b""", RegexOption.IGNORE_CASE),
             Regex("""\bWould you like to\b""", RegexOption.IGNORE_CASE),
