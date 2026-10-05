@@ -178,8 +178,12 @@ public final class TerminalView extends View {
                 } else {
                     scrolledWithFinger = true;
                     distanceY += mScrollRemainder;
-                    int deltaRows = (int) (distanceY / mRenderer.mFontLineSpacing);
-                    mScrollRemainder = distanceY - deltaRows * mRenderer.mFontLineSpacing;
+                    // Apps with mouse tracking (e.g. tmux) scroll several lines per wheel event, and
+                    // alt-screen apps get one arrow key per row, so require more finger travel there.
+                    float rowHeight = mRenderer.mFontLineSpacing
+                        * (mEmulator.isMouseTrackingActive() || mEmulator.isAlternateBufferActive() ? 3 : 1);
+                    int deltaRows = (int) (distanceY / rowHeight);
+                    mScrollRemainder = distanceY - deltaRows * rowHeight;
                     doScroll(e, deltaRows);
                 }
                 return true;
@@ -200,7 +204,7 @@ public final class TerminalView extends View {
                 if (!mScroller.isFinished()) return true;
 
                 final boolean mouseTrackingAtStartOfFling = mEmulator.isMouseTrackingActive();
-                float SCALE = 0.25f;
+                float SCALE = mouseTrackingAtStartOfFling || mEmulator.isAlternateBufferActive() ? 0.04f : 0.1f;
                 if (mouseTrackingAtStartOfFling) {
                     mScroller.fling(0, 0, 0, -(int) (velocityY * SCALE), 0, 0, -mEmulator.mRows / 2, mEmulator.mRows / 2);
                 } else {

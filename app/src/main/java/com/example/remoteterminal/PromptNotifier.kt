@@ -11,6 +11,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import com.termux.terminal.TerminalSession
 
 /** Posts the "needs your input" alert and the ongoing notification used by [KeepAliveService]. */
@@ -91,6 +92,7 @@ class PromptDetector(
 
     private val check = Runnable {
         val prompt = findPrompt()
+        Log.d(TAG, "settled: prompt=$prompt foreground=$inForeground lastNotified=$lastNotified")
         if (prompt == null) {
             lastNotified = null
         } else if (!inForeground && prompt != lastNotified) {
@@ -99,21 +101,36 @@ class PromptDetector(
         }
     }
 
+    /** Clears the de-dupe state as soon as the prompt leaves the screen, even while output keeps flowing. */
+    private val clearIfGone = Runnable {
+        clearPending = false
+        if (findPrompt() == null) lastNotified = null
+    }
+    private var clearPending = false
+
     /** Call on every screen update; the check runs once output has been quiet for [SETTLE_MS]. */
     fun onOutput() {
         handler.removeCallbacks(check)
         handler.postDelayed(check, SETTLE_MS)
+        if (lastNotified != null && !clearPending) {
+            clearPending = true
+            handler.postDelayed(clearIfGone, CLEAR_INTERVAL_MS)
+        }
     }
 
     private fun findPrompt(): String? {
         val emulator = terminal.emulator ?: return null
         val screen = emulator.screen.getSelectedText(0, 0, emulator.mColumns, emulator.mRows)
         val lines = screen.lines().map { it.trim() }.filter { it.isNotEmpty() }.takeLast(TAIL_LINES)
-        return lines.lastOrNull { line -> PATTERNS.any { it.containsMatchIn(line) } }?.take(MAX_LENGTH)
+        // PATTERNS are ordered by usefulness as a notification body: prefer the question over footer hints.
+        return PATTERNS.firstNotNullOfOrNull { pattern -> lines.lastOrNull { pattern.containsMatchIn(it) } }
+            ?.take(MAX_LENGTH)
     }
 
     private companion object {
+        const val TAG = "PromptDetector"
         const val SETTLE_MS = 1500L
+        const val CLEAR_INTERVAL_MS = 500L
         const val TAIL_LINES = 12
         const val MAX_LENGTH = 160
         val PATTERNS = listOf(
