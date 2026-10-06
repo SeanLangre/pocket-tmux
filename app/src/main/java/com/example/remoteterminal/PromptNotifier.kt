@@ -131,7 +131,7 @@ class PromptDetector(
         const val TAG = "PromptDetector"
         const val SETTLE_MS = 1500L
         const val CLEAR_INTERVAL_MS = 500L
-        const val TAIL_LINES = 12
+        const val TAIL_LINES = 30
         const val MAX_LENGTH = 160
         val PATTERNS = listOf(
             Regex("""Approval required|Run command:""", RegexOption.IGNORE_CASE),
@@ -139,7 +139,8 @@ class PromptDetector(
             Regex("""\bDo you want to\b""", RegexOption.IGNORE_CASE),
             Regex("""\bWould you like to\b""", RegexOption.IGNORE_CASE),
             Regex("""^\W*1\.\s*Yes\b"""),
-            Regex("""Esc to cancel|Enter to confirm|Press Enter to continue""", RegexOption.IGNORE_CASE),
+            Regex("""^Allow\?$"""),
+            Regex("""Esc to cancel|Enter to confirm|Press Enter to continue|escape/ctrl\+c cancel""", RegexOption.IGNORE_CASE),
         )
     }
 }
