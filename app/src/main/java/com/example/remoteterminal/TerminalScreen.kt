@@ -168,7 +168,7 @@ private fun ExtraKeys(vm: TerminalViewModel, onOpenSettings: () -> Unit) {
     }
 
     // Quick answers for AI CLI prompts (Claude Code etc.): Enter accepts the highlighted option,
-    // "2" picks the second ("don't ask again"), Esc declines, Shift+Tab cycles the permission mode.
+    // Esc declines, Shift+Tab cycles the permission mode.
     Row(
         Modifier
             .fillMaxWidth()
@@ -178,7 +178,6 @@ private fun ExtraKeys(vm: TerminalViewModel, onOpenSettings: () -> Unit) {
     ) {
         val wide = Modifier.weight(1f)
         ExtraKey("✓ Yes", wide, color = Color(0xFF1E5F2E)) { vm.active.terminal.write(byteArrayOf('\r'.code.toByte()), 0, 1) }
-        ExtraKey("2 Always", wide, color = Color(0xFF1E3A5F)) { vm.active.terminal.write(byteArrayOf('2'.code.toByte()), 0, 1) }
         ExtraKey("✗ No", wide, color = Color(0xFF5F1E1E)) { view()?.handleKeyCode(KeyEvent.KEYCODE_ESCAPE, 0) }
         ExtraKey("⇧TAB", wide) { view()?.handleKeyCode(KeyEvent.KEYCODE_TAB, KeyHandler.KEYMOD_SHIFT) }
     }
