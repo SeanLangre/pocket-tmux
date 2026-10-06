@@ -178,10 +178,10 @@ public final class TerminalView extends View {
                 } else {
                     scrolledWithFinger = true;
                     distanceY += mScrollRemainder;
-                    // Apps with mouse tracking (e.g. tmux) scroll several lines per wheel event, and
-                    // alt-screen apps get one arrow key per row, so require more finger travel there.
+                    // Alt-screen apps without mouse tracking get one arrow key per row, so require more
+                    // finger travel there. Mouse tracking (tmux) is one wheel event per row.
                     float rowHeight = mRenderer.mFontLineSpacing
-                        * (mEmulator.isMouseTrackingActive() || mEmulator.isAlternateBufferActive() ? 3 : 1);
+                        * (!mEmulator.isMouseTrackingActive() && mEmulator.isAlternateBufferActive() ? 3 : 1);
                     int deltaRows = (int) (distanceY / rowHeight);
                     mScrollRemainder = distanceY - deltaRows * rowHeight;
                     doScroll(e, deltaRows);
@@ -559,6 +559,11 @@ public final class TerminalView extends View {
 
     /** Send a single mouse event code to the terminal. */
     void sendMouseEventCode(MotionEvent e, int button, boolean pressed) {
+        sendMouseEventCode(e, button, pressed, 1);
+    }
+
+    /** Send {@code count} mouse press events at once; wheel events are coalesced into a single write. */
+    void sendMouseEventCode(MotionEvent e, int button, boolean pressed, int count) {
         int[] columnAndRow = getColumnAndRow(e, false);
         int x = columnAndRow[0] + 1;
         int y = columnAndRow[1] + 1;
@@ -572,24 +577,30 @@ public final class TerminalView extends View {
                 mMouseScrollStartY = y;
             }
         }
-        mEmulator.sendMouseEvent(button, x, y, pressed);
+        if (pressed && count > 1) mEmulator.sendMouseEvents(button, x, y, count);
+        else mEmulator.sendMouseEvent(button, x, y, pressed);
     }
 
     /** Perform a scroll, either from dragging the screen or by scrolling a mouse wheel. */
     void doScroll(MotionEvent event, int rowsDown) {
         boolean up = rowsDown < 0;
         int amount = Math.abs(rowsDown);
-        for (int i = 0; i < amount; i++) {
-            if (mEmulator.isMouseTrackingActive()) {
-                sendMouseEventCode(event, up ? TerminalEmulator.MOUSE_WHEELUP_BUTTON : TerminalEmulator.MOUSE_WHEELDOWN_BUTTON, true);
-            } else if (mEmulator.isAlternateBufferActive()) {
-                // Send up and down key events for scrolling, which is what some terminals do to make scroll work in
-                // e.g. less, which shifts to the alt screen without mouse handling.
-                handleKeyCode(up ? KeyEvent.KEYCODE_DPAD_UP : KeyEvent.KEYCODE_DPAD_DOWN, 0);
-            } else {
-                setTopRow(Math.min(0, Math.max(-(mEmulator.getScreen().getActiveTranscriptRows()), mTopRow + (up ? -1 : 1))));
-                if (!awakenScrollBars()) invalidate();
+        if (amount == 0) return;
+        if (mEmulator.isMouseTrackingActive()) {
+            sendMouseEventCode(event, up ? TerminalEmulator.MOUSE_WHEELUP_BUTTON : TerminalEmulator.MOUSE_WHEELDOWN_BUTTON, true, amount);
+        } else if (mEmulator.isAlternateBufferActive()) {
+            // Send up and down key events for scrolling, which is what some terminals do to make scroll work in
+            // e.g. less, which shifts to the alt screen without mouse handling. Batched into one write.
+            String code = KeyHandler.getCode(up ? KeyEvent.KEYCODE_DPAD_UP : KeyEvent.KEYCODE_DPAD_DOWN, 0,
+                mEmulator.isCursorKeysApplicationMode(), mEmulator.isKeypadApplicationMode());
+            if (code != null && mTermSession != null) {
+                StringBuilder sb = new StringBuilder(code.length() * amount);
+                for (int i = 0; i < amount; i++) sb.append(code);
+                mTermSession.write(sb.toString());
             }
+        } else {
+            setTopRow(Math.min(0, Math.max(-(mEmulator.getScreen().getActiveTranscriptRows()), mTopRow + rowsDown)));
+            if (!awakenScrollBars()) invalidate();
         }
     }
 

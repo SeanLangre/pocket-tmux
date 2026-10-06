@@ -225,9 +225,9 @@ private fun ExtraKeys(vm: TerminalViewModel, onOpenSettings: () -> Unit) {
         horizontalArrangement = Arrangement.spacedBy(2.dp),
     ) {
         ExtraKey("ESC") { sendKeyCode(KeyEvent.KEYCODE_ESCAPE) }
-        ExtraKey("TAB") { sendKeyCode(KeyEvent.KEYCODE_TAB) }
         ExtraKey("CTRL", active = modifiers.ctrl) { modifiers.ctrl = !modifiers.ctrl }
         ExtraKey("ALT", active = modifiers.alt) { modifiers.alt = !modifiers.alt }
+        ExtraKey("⌫") { sendKeyCode(KeyEvent.KEYCODE_DEL) }
         ExtraKey("^C", color = Color(0xFF5F1E1E)) { vm.active.terminal.write(byteArrayOf(0x03), 0, 1) } // SIGINT
         ExtraKey("←") { sendKeyCode(KeyEvent.KEYCODE_DPAD_LEFT) }
         ExtraKey("↓") { sendKeyCode(KeyEvent.KEYCODE_DPAD_DOWN) }

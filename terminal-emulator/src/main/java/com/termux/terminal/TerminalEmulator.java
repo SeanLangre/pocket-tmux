@@ -550,6 +550,29 @@ public final class TerminalEmulator {
     /**
      * @param mouseButton one of the MOUSE_* constants of this class.
      */
+    /** Send {@code count} identical press events in a single write (one network packet instead of many). */
+    public void sendMouseEvents(int mouseButton, int column, int row, int count) {
+        if (count <= 1) {
+            sendMouseEvent(mouseButton, column, row, true);
+            return;
+        }
+        column = Math.max(1, Math.min(column, mColumns));
+        row = Math.max(1, Math.min(row, mRows));
+        StringBuilder sb = new StringBuilder();
+        if (isDecsetInternalBitSet(DECSET_BIT_MOUSE_PROTOCOL_SGR)) {
+            String one = "\033[<" + mouseButton + ";" + column + ";" + row + "M";
+            for (int i = 0; i < count; i++) sb.append(one);
+        } else {
+            if (column > 255 - 32 || row > 255 - 32) return;
+            for (int i = 0; i < count; i++) {
+                sb.append("\033[M").append((char) (32 + mouseButton)).append((char) (32 + column)).append((char) (32 + row));
+            }
+        }
+        // Legacy X10 coordinates are single bytes (up to 255), so write as ISO-8859-1 rather than UTF-8.
+        byte[] data = sb.toString().getBytes(java.nio.charset.StandardCharsets.ISO_8859_1);
+        mSession.write(data, 0, data.length);
+    }
+
     public void sendMouseEvent(int mouseButton, int column, int row, boolean pressed) {
         if (column < 1) column = 1;
         if (column > mColumns) column = mColumns;
