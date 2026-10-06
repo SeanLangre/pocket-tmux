@@ -23,6 +23,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -37,15 +38,18 @@ import com.termux.view.TerminalView
 
 @Composable
 fun TerminalScreen(vm: TerminalViewModel, onOpenSettings: () -> Unit) {
-    val state by vm.connection.state.collectAsStateWithLifecycle()
+    val pane = vm.active
+    val state by pane.connection.state.collectAsStateWithLifecycle()
 
     Column(Modifier.fillMaxSize().background(Color.Black)) {
+        PaneTabs(vm)
         StatusBanner(
             state = state,
             onRetry = vm::retry,
             onForgetHostKey = vm::forgetHostKeyAndRetry,
             onOpenSettings = onOpenSettings,
         )
+        key(pane.index) {
         AndroidView(
             modifier = Modifier.weight(1f).fillMaxWidth(),
             factory = { context ->
@@ -61,14 +65,42 @@ fun TerminalScreen(vm: TerminalViewModel, onOpenSettings: () -> Unit) {
                     isFocusable = true
                     isFocusableInTouchMode = true
                     keepScreenOn = true
-                    attachSession(vm.terminal)
-                    vm.terminalView = this
+                    attachSession(pane.terminal)
+                    pane.terminalView = this
                     requestFocus()
                 }
             },
-            onRelease = { view -> if (vm.terminalView === view) vm.terminalView = null },
+            onRelease = { view -> if (pane.terminalView === view) pane.terminalView = null },
         )
+        }
         ExtraKeys(vm, onOpenSettings)
+    }
+}
+
+/** Tab strip for switching between terminals (tmux sessions "main", "main2"). */
+@Composable
+private fun PaneTabs(vm: TerminalViewModel) {
+    Row(Modifier.fillMaxWidth().background(Color(0xFF1A1A1A)), horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+        val base = vm.config.tmuxSession.ifBlank { "main" }
+        for (pane in vm.panes) {
+            val selected = pane.index == vm.activeIndex
+            Box(
+                Modifier
+                    .weight(1f)
+                    .background(if (selected) MaterialTheme.colorScheme.primary else Color(0xFF2A2A2A))
+                    .height(32.dp)
+                    .clickable { vm.selectPane(pane.index) },
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    if (pane.index == 0) base else "$base${pane.index + 1}",
+                    color = if (selected) MaterialTheme.colorScheme.onPrimary else Color.White,
+                    fontFamily = FontFamily.Monospace,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 13.sp,
+                )
+            }
+        }
     }
 }
 
@@ -122,7 +154,7 @@ private fun StatusBanner(
 private fun ExtraKeys(vm: TerminalViewModel, onOpenSettings: () -> Unit) {
     val modifiers = vm.modifiers
 
-    fun view(): TerminalView? = vm.terminalView
+    fun view(): TerminalView? = vm.active.terminalView
 
     fun sendKeyCode(keyCode: Int) {
         var mod = 0
@@ -145,8 +177,8 @@ private fun ExtraKeys(vm: TerminalViewModel, onOpenSettings: () -> Unit) {
         horizontalArrangement = Arrangement.spacedBy(2.dp),
     ) {
         val wide = Modifier.weight(1f)
-        ExtraKey("✓ Yes", wide, color = Color(0xFF1E5F2E)) { vm.terminal.write(byteArrayOf('\r'.code.toByte()), 0, 1) }
-        ExtraKey("2 Always", wide, color = Color(0xFF1E3A5F)) { vm.terminal.write(byteArrayOf('2'.code.toByte()), 0, 1) }
+        ExtraKey("✓ Yes", wide, color = Color(0xFF1E5F2E)) { vm.active.terminal.write(byteArrayOf('\r'.code.toByte()), 0, 1) }
+        ExtraKey("2 Always", wide, color = Color(0xFF1E3A5F)) { vm.active.terminal.write(byteArrayOf('2'.code.toByte()), 0, 1) }
         ExtraKey("✗ No", wide, color = Color(0xFF5F1E1E)) { view()?.handleKeyCode(KeyEvent.KEYCODE_ESCAPE, 0) }
         ExtraKey("⇧TAB", wide) { view()?.handleKeyCode(KeyEvent.KEYCODE_TAB, KeyHandler.KEYMOD_SHIFT) }
     }
@@ -162,7 +194,7 @@ private fun ExtraKeys(vm: TerminalViewModel, onOpenSettings: () -> Unit) {
         ExtraKey("TAB") { sendKeyCode(KeyEvent.KEYCODE_TAB) }
         ExtraKey("CTRL", active = modifiers.ctrl) { modifiers.ctrl = !modifiers.ctrl }
         ExtraKey("ALT", active = modifiers.alt) { modifiers.alt = !modifiers.alt }
-        ExtraKey("^C", color = Color(0xFF5F1E1E)) { vm.terminal.write(byteArrayOf(0x03), 0, 1) } // SIGINT
+        ExtraKey("^C", color = Color(0xFF5F1E1E)) { vm.active.terminal.write(byteArrayOf(0x03), 0, 1) } // SIGINT
         ExtraKey("←") { sendKeyCode(KeyEvent.KEYCODE_DPAD_LEFT) }
         ExtraKey("↓") { sendKeyCode(KeyEvent.KEYCODE_DPAD_DOWN) }
         ExtraKey("↑") { sendKeyCode(KeyEvent.KEYCODE_DPAD_UP) }
