@@ -17,6 +17,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -24,6 +26,9 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -35,6 +40,20 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.termux.terminal.KeyHandler
 import com.termux.view.TerminalView
+
+/** A predefined command. [enter] runs it immediately; otherwise it is only typed so arguments can be added. */
+private class QuickCommand(val text: String, val enter: Boolean = true)
+
+private val QUICK_COMMANDS = listOf(
+    QuickCommand("/clear"),
+    QuickCommand("/model"),
+    QuickCommand("/status"),
+    QuickCommand("claude"),
+    QuickCommand("git status"),
+    QuickCommand("ls -la"),
+    QuickCommand("pwd"),
+    QuickCommand("cd ", enter = false),
+)
 
 @Composable
 fun TerminalScreen(vm: TerminalViewModel, onOpenSettings: () -> Unit) {
@@ -180,6 +199,22 @@ private fun ExtraKeys(vm: TerminalViewModel, onOpenSettings: () -> Unit) {
         ExtraKey("✓ Yes", wide, color = Color(0xFF1E5F2E)) { vm.active.terminal.write(byteArrayOf('\r'.code.toByte()), 0, 1) }
         ExtraKey("✗ No", wide, color = Color(0xFF5F1E1E)) { view()?.handleKeyCode(KeyEvent.KEYCODE_ESCAPE, 0) }
         ExtraKey("⇧TAB", wide) { view()?.handleKeyCode(KeyEvent.KEYCODE_TAB, KeyHandler.KEYMOD_SHIFT) }
+        var menuOpen by remember { mutableStateOf(false) }
+        Box(wide) {
+            ExtraKey("⌘ Cmds", Modifier.fillMaxWidth()) { menuOpen = true }
+            DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                for (cmd in QUICK_COMMANDS) {
+                    DropdownMenuItem(
+                        text = { Text(cmd.text, fontFamily = FontFamily.Monospace) },
+                        onClick = {
+                            menuOpen = false
+                            val bytes = (cmd.text + if (cmd.enter) "\r" else "").toByteArray()
+                            vm.active.terminal.write(bytes, 0, bytes.size)
+                        },
+                    )
+                }
+            }
+        }
     }
     Row(
         Modifier
