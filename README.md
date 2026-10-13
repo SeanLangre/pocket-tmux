@@ -2,9 +2,12 @@
 
 Android app that opens straight into a tmux session on your PC over SSH.
 
+```mermaid
+flowchart LR
+  A["Android app<br/>(Compose + Termux terminal view)"] -->|SSH| B["PC sshd"] --> C["tmux new-session -A -s main"]
 ```
-Android app (Compose + Termux terminal view) ──SSH──▶ PC sshd ──▶ tmux new-session -A -s main
-```
+
+<img src="docs/screenshot.png" alt="Remote Terminal showing two tmux tabs, quick-answer keys and the extra key row" width="300">
 
 - Connects automatically on launch and attaches to (or creates) the tmux session.
 - Reconnects automatically: on Wi-Fi/mobile switches immediately, otherwise with backoff (1s → 30s).
@@ -16,7 +19,7 @@ Android app (Compose + Termux terminal view) ──SSH──▶ PC sshd ──�
 - Two terminal tabs: the second attaches to its own tmux session (`main2`) and connects lazily.
 - Extra key row: ESC, sticky CTRL/ALT, backspace, `^C`, arrows, PGUP/PGDN, `| - / ~`, and a settings
   button. Pinch to zoom, long-press to select/copy (with cursor handles).
-- AI CLI helpers (Claude Code etc.): **✓ Yes** / **✗ No** quick-answer keys and a dropdown of quick
+- AI CLI helpers (Claude Code etc.): **✓ Yes** / **✗ No** / **⇧TAB** quick-answer keys and a dropdown of quick
   commands (`/clear`, `/model`, `/status`, `git status`, ...).
 - Prompt detection: when the terminal shows an approval/confirmation prompt (`(y/n)`, "Do you want
   to", ...) while the app is in the background, it posts a notification.
@@ -59,6 +62,9 @@ Versions are pinned in `gradle/libs.versions.toml`.
 | AndroidX lifecycle (runtime/viewmodel-compose) | 2.9.4 | State handling |
 | AndroidX core-ktx | 1.16.0 | Kotlin extensions |
 | `terminal-emulator`, `terminal-view` | vendored | Termux terminal libraries |
+
+The app is Kotlin with MVVM (`AndroidViewModel`) and `StateFlow`; persistence is `SharedPreferences`, and
+the SSH key is wrapped with the Android Keystore (AES-GCM).
 
 </details>
 
@@ -107,6 +113,8 @@ adb install app/build/outputs/apk/debug/app-debug.apk
   the app then reconnects (and tmux reattaches) when you open it again.
 - Reaching the PC from outside your LAN needs a VPN such as Tailscale/WireGuard; just use that address
   as the host.
+- The saved password is stored unencrypted in `SharedPreferences` (encrypting it is on the TODO list).
+  Prefer key authentication.
 
 </details>
 
@@ -248,7 +256,7 @@ Input on a phone needs help, so `TerminalScreen` adds an extra-key row:
 - ESC, backspace and `^C` (SIGINT)
 - sticky one-shot CTRL and ALT
 - arrow keys, PGUP and PGDN, and `| - / ~`
-- ✓ Yes / ✗ No quick answers for AI CLI prompts, and a quick-command dropdown
+- ✓ Yes / ✗ No / ⇧TAB quick answers for AI CLI prompts, and a quick-command dropdown
 
 Long-press selects and copies text (with cursor handles), and pinch changes the font size. Touch
 scrolling is sent as mouse-wheel events to apps that enable mouse tracking.
@@ -341,23 +349,13 @@ Settings shows the trusted fingerprint, with a "Forget host key" action.
 
 </details>
 
-<details open>
-<summary><h3>Technologies</h3></summary>
-
-| Component       | Choice                                        |
-| --------------- | --------------------------------------------- |
-| Language        | Kotlin (app), Java (vendored terminal)        |
-| UI              | Jetpack Compose + Material 3 (dark)           |
-| Architecture    | MVVM (`AndroidViewModel`)                     |
-| Async           | Kotlin Coroutines + `StateFlow`               |
-| SSH             | sshj 0.40 + full BouncyCastle 1.81            |
-| Terminal        | Termux terminal-emulator / terminal-view      |
-| Persistence     | SharedPreferences                             |
-| Key protection  | Android Keystore (AES-GCM wrapping)           |
-| Build           | AGP 9.4, Gradle 9.6, Kotlin 2.2               |
-| PC              | OpenSSH + tmux                                |
-| Minimum Android | 8.0 (API 26)                                  |
-
 </details>
 
-</details>
+## Roadmap
+
+See [TODO.md](TODO.md).
+
+## License
+
+Apache License 2.0, see `LICENSE-APACHE-2.0.txt`. The vendored Termux libraries are Apache 2.0 as well;
+see `NOTICE.md` for their origin and our modifications.
