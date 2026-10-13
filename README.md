@@ -48,27 +48,6 @@ Create `local.properties` with `sdk.dir=/path/to/Android/Sdk` if your IDE doesn'
 </details>
 
 <details open>
-<summary><h2>Dependencies</h2></summary>
-
-Versions are pinned in `gradle/libs.versions.toml`.
-
-| Package | Version | Purpose |
-|---|---|---|
-| [sshj](https://github.com/hierynomus/sshj) | 0.40.0 | SSH client |
-| BouncyCastle (`bcprov`, `bcpkix` jdk18on) | 1.81 | Key generation / crypto |
-| kotlinx-coroutines-android | 1.10.2 | Async / reconnect loop |
-| Jetpack Compose BOM + Material3 | 2026.02.01 | UI |
-| AndroidX activity-compose | 1.10.1 | Compose host |
-| AndroidX lifecycle (runtime/viewmodel-compose) | 2.9.4 | State handling |
-| AndroidX core-ktx | 1.16.0 | Kotlin extensions |
-| `terminal-emulator`, `terminal-view` | vendored | Termux terminal libraries |
-
-The app is Kotlin with MVVM (`AndroidViewModel`) and `StateFlow`; persistence is `SharedPreferences`, and
-the SSH key is wrapped with the Android Keystore (AES-GCM).
-
-</details>
-
-<details open>
 <summary><h2>PC setup</h2></summary>
 
 1. Make sure `sshd` and `tmux` are installed and sshd is running (`sudo systemctl enable --now sshd`).
@@ -94,6 +73,27 @@ set -g aggressive-resize on
 ./gradlew assembleDebug
 adb install app/build/outputs/apk/debug/app-debug.apk
 ```
+
+</details>
+
+<details open>
+<summary><h2>Dependencies</h2></summary>
+
+Versions are pinned in `gradle/libs.versions.toml`.
+
+| Package | Version | Purpose |
+|---|---|---|
+| [sshj](https://github.com/hierynomus/sshj) | 0.40.0 | SSH client |
+| BouncyCastle (`bcprov`, `bcpkix` jdk18on) | 1.81 | Key generation / crypto |
+| kotlinx-coroutines-android | 1.10.2 | Async / reconnect loop |
+| Jetpack Compose BOM + Material3 | 2026.02.01 | UI |
+| AndroidX activity-compose | 1.10.1 | Compose host |
+| AndroidX lifecycle (runtime/viewmodel-compose) | 2.9.4 | State handling |
+| AndroidX core-ktx | 1.16.0 | Kotlin extensions |
+| `terminal-emulator`, `terminal-view` | vendored | Termux terminal libraries |
+
+The app is Kotlin with MVVM (`AndroidViewModel`) and `StateFlow`; persistence is `SharedPreferences`, and
+the SSH key is wrapped with the Android Keystore (AES-GCM).
 
 </details>
 
