@@ -22,7 +22,8 @@ Android app (Compose + Termux terminal view) ──SSH──▶ PC sshd ──�
   to", ...) while the app is in the background, it posts a notification.
 - Mouse-tracking apps (tmux `mouse on`, etc.) get touch scrolling as mouse wheel events.
 
-## Prerequisites
+<details open>
+<summary><h2>Prerequisites</h2></summary>
 
 **On the PC:** `sshd` running and `tmux` installed.
 
@@ -41,7 +42,10 @@ Android app (Compose + Termux terminal view) ──SSH──▶ PC sshd ──�
 
 Create `local.properties` with `sdk.dir=/path/to/Android/Sdk` if your IDE doesn't (it is gitignored).
 
-## Dependencies
+</details>
+
+<details open>
+<summary><h2>Dependencies</h2></summary>
 
 Versions are pinned in `gradle/libs.versions.toml`.
 
@@ -56,7 +60,10 @@ Versions are pinned in `gradle/libs.versions.toml`.
 | AndroidX core-ktx | 1.16.0 | Kotlin extensions |
 | `terminal-emulator`, `terminal-view` | vendored | Termux terminal libraries |
 
-## PC setup
+</details>
+
+<details open>
+<summary><h2>PC setup</h2></summary>
 
 1. Make sure `sshd` and `tmux` are installed and sshd is running (`sudo systemctl enable --now sshd`).
 2. Find the PC's LAN IP (`ip -4 addr`) — a static DHCP lease makes life easier.
@@ -72,111 +79,83 @@ set -g mouse on          # tap to select panes, swipe to scroll
 set -g aggressive-resize on
 ```
 
-## Build
+</details>
+
+<details open>
+<summary><h2>Build</h2></summary>
 
 ```sh
 ./gradlew assembleDebug
 adb install app/build/outputs/apk/debug/app-debug.apk
 ```
 
-## Project layout
+</details>
+
+<details open>
+<summary><h2>Project layout</h2></summary>
 
 - `app/` — Compose UI, `SshConnection` (sshj, reconnect loop), `KeyManager`, `TofuHostKeyVerifier`,
   `KeepAliveService` (foreground service), `PromptNotifier` (prompt detection + notifications).
 - `terminal-emulator/`, `terminal-view/` — vendored Termux terminal libraries (Apache 2.0, see `NOTICE.md`).
 
-## Limitations
+</details>
+
+<details open>
+<summary><h2>Limitations</h2></summary>
 
 - A foreground service keeps the SSH session alive in the background, but Android may still kill it;
   the app then reconnects (and tmux reattaches) when you open it again.
 - Reaching the PC from outside your LAN needs a VPN such as Tailscale/WireGuard; just use that address
   as the host.
 
-## Architecture
+</details>
 
-```text
-┌──────────────────────────────────────────────────────────────────┐
-│                           Android App                            │
-│                                                                  │
-│  ┌────────────────────────────────────────────────────────────┐  │
-│  │                        UI / Compose                        │  │
-│  │                                                            │  │
-│  │  SettingsScreen              TerminalScreen                │  │
-│  │  • PC address / port / user  • TerminalView (AndroidView)  │  │
-│  │  • key or password           • status banner               │  │
-│  │  • public key, host key      • extra keys: ESC CTRL ^C ←→  │  │
-│  └─────────────────────────────┬──────────────────────────────┘  │
-│                                │                                 │
-│  ┌─────────────────────────────▼──────────────────────────────┐  │
-│  │                     TerminalViewModel                      │  │
-│  │  survives rotation; owns the session and the connection    │  │
-│  └───────┬──────────────────────────────────────┬─────────────┘  │
-│          │                                      │                │
-│  ┌───────▼────────────────┐  bytes   ┌──────────▼─────────────┐  │
-│  │     SshConnection      │◀────────▶│    TerminalSession     │  │
-│  │                        │Transport │  (vendored Termux,     │  │
-│  │ • sshj client          │          │   stream-backed)       │  │
-│  │ • PTY + exec tmux      │          │                        │  │
-│  │ • reconnect loop       │          │  TerminalEmulator      │  │
-│  │ • network callback     │          │  • ANSI / VT100 parse  │  │
-│  │ • ConnectionState flow │          │  • screen + scrollback │  │
-│  └───────┬────────────────┘          └──────────┬─────────────┘  │
-│          │ uses                                 │ renders        │
-│  ┌───────▼────────────────┐          ┌──────────▼─────────────┐  │
-│  │ KeyManager             │          │ TerminalView           │  │
-│  │ TofuHostKeyVerifier    │          │ (vendored Termux)      │  │
-│  │ ConfigStore            │          │ drawing, IME, select,  │  │
-│  │ (Keystore + prefs)     │          │ pinch-zoom             │  │
-│  └────────────────────────┘          └────────────────────────┘  │
-└────────────────────────────────┬─────────────────────────────────┘
-                                 │
-                                 │ SSH (encrypted)
-                                 ▼
-                      ┌──────────────────────┐
-                      │          PC          │
-                      │                      │
-                      │        sshd          │
-                      │          │  exec     │
-                      │          ▼           │
-                      │  tmux new-session -A │
-                      │          │           │
-                      │          ▼           │
-                      │    your processes    │
-                      └──────────────────────┘
+<details open>
+<summary><h2>Architecture</h2></summary>
+
+```mermaid
+flowchart TB
+  subgraph APP["Android App"]
+    direction TB
+    subgraph UI["UI / Compose"]
+      direction LR
+      SET["SettingsScreen<br/>PC address, port, user<br/>key or password<br/>public key, host key"]
+      TS["TerminalScreen<br/>TerminalView (AndroidView)<br/>status banner<br/>extra keys: ESC CTRL ^C arrows"]
+    end
+    VM["TerminalViewModel<br/>survives rotation; owns the panes,<br/>their sessions and connections"]
+    SSH["SshConnection<br/>sshj client<br/>PTY + exec tmux<br/>reconnect loop<br/>network callback<br/>ConnectionState flow"]
+    TERM["TerminalSession (vendored Termux)<br/>TerminalEmulator<br/>ANSI / VT100 parse<br/>screen + scrollback"]
+    SEC["KeyManager<br/>TofuHostKeyVerifier<br/>ConfigStore<br/>(Keystore + prefs)"]
+    VIEW["TerminalView (vendored Termux)<br/>drawing, IME, select, pinch-zoom"]
+    UI --> VM
+    VM --> SSH
+    VM --> TERM
+    SSH <-->|"bytes via Transport"| TERM
+    SSH -->|uses| SEC
+    TERM -->|renders| VIEW
+  end
+  subgraph PC["PC"]
+    SSHD["sshd"] -->|exec| TMUX["tmux new-session -A"] --> PROC["your processes"]
+  end
+  SSH ==>|"SSH (encrypted)"| SSHD
 ```
 
 The important rule is to **keep SSH, the terminal, and the UI separate**. The only thing joining
 SSH to the terminal is the small `TerminalSession.Transport` interface.
 
-### Connection flow
+<details open>
+<summary><h3>Connection flow</h3></summary>
 
-```text
-App starts
-   │
-   ▼
-Load saved config (ConfigStore)
-   │
-   ├── incomplete ──► SettingsScreen (first-time setup)
-   │
-   └── complete
-        │
-        ▼
-   SshConnection.start()
-        │
-        ▼
-   SSH connect + check host key
-        │
-        ▼
-   Authenticate (phone key or password)
-        │
-        ▼
-   Allocate PTY (xterm-256color, current terminal size)
-        │
-        ▼
-   exec "tmux new-session -A -s main"
-        │
-        ▼
-   Pump bytes: SSH ⇄ TerminalSession ⇄ TerminalView
+```mermaid
+flowchart TD
+  A["App starts"] --> B["Load saved config (ConfigStore)"]
+  B -->|incomplete| C["SettingsScreen (first-time setup)"]
+  B -->|complete| D["SshConnection.start()"]
+  D --> E["SSH connect + check host key"]
+  E --> F["Authenticate (phone key or password)"]
+  F --> G["Allocate PTY (xterm-256color, current terminal size)"]
+  G --> H["exec tmux new-session -A -s main"]
+  H --> I["Pump bytes: SSH <-> TerminalSession <-> TerminalView"]
 ```
 
 The key command is:
@@ -204,7 +183,10 @@ We run tmux with `session.exec(command)` instead of starting a shell and writing
   **"you detached"** (channel EOF, connection still up → `Ended`) apart from
   **"the network died"** (connection gone → reconnect).
 
-### SSH layer (`SshConnection`)
+</details>
+
+<details open>
+<summary><h3>SSH layer (<code>SshConnection</code>)</h3></summary>
 
 sshj is used directly. The only interface between it and the terminal is:
 
@@ -222,7 +204,10 @@ screen and the scrollback all survive reconnects.
 
 If the SSH library ever needs to change, `SshConnection` is the only file that imports sshj.
 
-### Terminal layer
+</details>
+
+<details open>
+<summary><h3>Terminal layer</h3></summary>
 
 This is the most important part of the project. A raw SSH stream isn't just text. Programs send control
 sequences such as:
@@ -274,7 +259,10 @@ scrolling is sent as mouse-wheel events to apps that enable mouse tracking.
 `SshConnection`. Pane 0 runs the configured command; pane 2 attaches to tmux session `<name>2`
 (`main2`) and connects lazily the first time it is shown.
 
-### Reconnection
+</details>
+
+<details open>
+<summary><h3>Reconnection</h3></summary>
 
 This matters on Android because the network disappears when the phone switches between Wi-Fi and mobile data.
 
@@ -289,19 +277,15 @@ sealed interface ConnectionState {
 }
 ```
 
-```text
-Connected
-   │
-   ├── detach / tmux exit ──────────────► Ended        (no auto-retry; tap Reconnect)
-   │
-   ├── auth rejected / host key changed ─► Failed       (needs user action)
-   │
-   └── network lost / keepalive timeout
-          │
-          ▼
-       Reconnecting ── backoff 1s → 2s → 4s … 30s ──► Connecting ──► Connected
-          ▲                                               │
-          └────────────────── failure ────────────────────┘
+```mermaid
+stateDiagram-v2
+  [*] --> Connecting
+  Connecting --> Connected
+  Connected --> Ended: detach / tmux exit (no auto-retry, tap Reconnect)
+  Connected --> Failed: auth rejected / host key changed (needs user action)
+  Connected --> Reconnecting: network lost / keepalive timeout
+  Reconnecting --> Connecting: backoff 1s, 2s, 4s ... 30s
+  Connecting --> Reconnecting: failure
 ```
 
 Reconnection is triggered in these ways:
@@ -328,7 +312,10 @@ background. If Android still kills the app, opening it again simply reconnects a
 If it matches an approval or confirmation prompt (`(y/n)`, "Do you want to", "Esc to cancel", ...)
 while the app is in the background, `PromptNotifier` posts an input-needed notification.
 
-### Security
+</details>
+
+<details open>
+<summary><h3>Security</h3></summary>
 
 **Client key.** The phone generates its own ECDSA P-256 key pair:
 
@@ -352,7 +339,10 @@ Later connections ──► must match, otherwise Failed(hostKeyChanged)
 
 Settings shows the trusted fingerprint, with a "Forget host key" action.
 
-### Technologies
+</details>
+
+<details open>
+<summary><h3>Technologies</h3></summary>
 
 | Component       | Choice                                        |
 | --------------- | --------------------------------------------- |
@@ -368,39 +358,6 @@ Settings shows the trusted fingerprint, with a "Forget host key" action.
 | PC              | OpenSSH + tmux                                |
 | Minimum Android | 8.0 (API 26)                                  |
 
-### Roadmap
+</details>
 
-**Done**
-
-- [x] SSH → PC → tmux, auto-connect on launch
-- [x] Real terminal: ANSI/VT100, colors, resize, scrollback, Ctrl/Alt/Esc/arrows, copy/paste, zoom
-- [x] Keystore-encrypted on-device SSH key
-- [x] Host key pinning (trust on first use)
-- [x] Automatic reconnect with backoff and network-change detection
-- [x] Connection status banner and settings screen
-- [x] Two terminal panes (tabs)
-- [x] Foreground service and input-needed notifications for AI CLI prompts
-- [x] Quick Yes/No keys and quick-command menu
-
-**Next**
-
-- [ ] Confirm the host key fingerprint on first connect, instead of trusting it silently
-- [ ] Encrypt the saved password, which is currently plain text in SharedPreferences
-- [ ] Import an existing private key, e.g. `id_ed25519`
-- [ ] Settings toggles: connect automatically / reconnect automatically
-- [ ] Multiple PCs
-- [ ] tmux session picker using `tmux list-sessions`:
-
-```text
-┌─────────────────────────┐
-│ Select tmux session     │
-├─────────────────────────┤
-│ ● main                  │
-│   development           │
-│   server                │
-│                         │
-│       + New session     │
-└─────────────────────────┘
-```
-
-- [ ] Move persistence to DataStore
+</details>

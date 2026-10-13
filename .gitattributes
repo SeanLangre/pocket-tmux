@@ -1,0 +1,3 @@
+# Vendored Termux libraries: exclude from GitHub language stats
+terminal-emulator/** linguist-vendored
+terminal-view/** linguist-vendored
