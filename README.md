@@ -1,4 +1,4 @@
-# Remote Terminal
+# Pocket tmux
 
 Android app that opens straight into a tmux session on your PC over SSH.
 
@@ -7,7 +7,7 @@ flowchart LR
   A["Android app<br/>(Compose + Termux terminal view)"] -->|SSH| B["PC sshd"] --> C["tmux new-session -A -s main"]
 ```
 
-<img src="docs/screenshot.png" alt="Remote Terminal showing two tmux tabs, quick-answer keys and the extra key row" width="300">
+<img src="docs/screenshot.png" alt="Pocket tmux showing two tmux tabs, quick-answer keys and the extra key row" width="300">
 
 - Connects automatically on launch and attaches to (or creates) the tmux session.
 - Reconnects automatically: on Wi-Fi/mobile switches immediately, otherwise with backoff (1s → 30s).
@@ -54,7 +54,7 @@ Create `local.properties` with `sdk.dir=/path/to/Android/Sdk` if your IDE doesn'
 2. Find the PC's LAN IP (`ip -4 addr`) — a static DHCP lease makes life easier.
 3. Open the app, enter IP, username, and copy/share the shown public key, then on the PC:
    ```sh
-   echo 'ecdsa-sha2-nistp256 AAAA... remote-terminal@android' >> ~/.ssh/authorized_keys
+   echo 'ecdsa-sha2-nistp256 AAAA... pocket-tmux@android' >> ~/.ssh/authorized_keys
    ```
 4. Tap **Save & connect**.
 

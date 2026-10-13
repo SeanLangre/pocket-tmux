@@ -22,5 +22,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "RemoteTerminal"
+rootProject.name = "PocketTmux"
 include(":app", ":terminal-emulator", ":terminal-view")

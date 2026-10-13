@@ -1,4 +1,4 @@
-package com.example.remoteterminal
+package com.example.pockettmux
 
 import android.graphics.Typeface
 import android.util.TypedValue

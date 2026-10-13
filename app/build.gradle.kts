@@ -4,13 +4,13 @@ plugins {
 }
 
 android {
-    namespace = "com.example.remoteterminal"
+    namespace = "com.example.pockettmux"
     compileSdk {
         version = release(35)
     }
 
     defaultConfig {
-        applicationId = "com.example.remoteterminal"
+        applicationId = "com.example.pockettmux"
         minSdk = 26
         targetSdk = 35
         versionCode = 1

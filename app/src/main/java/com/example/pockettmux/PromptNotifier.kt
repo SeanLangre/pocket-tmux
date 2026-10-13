@@ -1,4 +1,4 @@
-package com.example.remoteterminal
+package com.example.pockettmux
 
 import android.Manifest
 import android.app.Notification
@@ -34,7 +34,7 @@ class PromptNotifier(private val context: Context) {
     fun serviceNotification(): Notification =
         Notification.Builder(context, SERVICE_CHANNEL)
             .setSmallIcon(android.R.drawable.ic_menu_agenda)
-            .setContentTitle("Remote Terminal")
+            .setContentTitle("Pocket tmux")
             .setContentText("Watching for prompts that need your input")
             .setContentIntent(openAppIntent())
             .setOngoing(true)

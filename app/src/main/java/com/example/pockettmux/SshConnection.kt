@@ -1,4 +1,4 @@
-package com.example.remoteterminal
+package com.example.pockettmux
 
 import android.content.Context
 import android.net.ConnectivityManager

@@ -1,4 +1,4 @@
-package com.example.remoteterminal
+package com.example.pockettmux
 
 import android.app.Application
 import org.bouncycastle.jce.provider.BouncyCastleProvider

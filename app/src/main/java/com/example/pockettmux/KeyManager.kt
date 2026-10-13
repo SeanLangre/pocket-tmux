@@ -1,4 +1,4 @@
-package com.example.remoteterminal
+package com.example.pockettmux
 
 import android.content.Context
 import android.security.keystore.KeyGenParameterSpec
@@ -44,7 +44,7 @@ class KeyManager(context: Context) {
     fun authorizedKeysLine(): String {
         val pub = keyPair().public
         val blob = Buffer.PlainBuffer().putPublicKey(pub).compactData
-        return "${KeyType.fromKey(pub)} ${Base64.encodeToString(blob, Base64.NO_WRAP)} remote-terminal@android"
+        return "${KeyType.fromKey(pub)} ${Base64.encodeToString(blob, Base64.NO_WRAP)} pocket-tmux@android"
     }
 
     @Synchronized
