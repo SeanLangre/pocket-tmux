@@ -157,13 +157,14 @@ private fun StatusBanner(
             when {
                 state is ConnectionState.Failed && state.hostKeyChanged ->
                     TextButton(onClick = onForgetHostKey) { Text("Trust new key", color = Color.White) }
-                state is ConnectionState.Failed ->
-                    TextButton(onClick = onOpenSettings) { Text("Settings", color = Color.White) }
+                state is ConnectionState.Failed -> Unit
                 state !is ConnectionState.Connecting ->
                     TextButton(onClick = onRetry) {
                         Text(if (state is ConnectionState.Reconnecting) "Retry now" else "Reconnect", color = Color.White)
                     }
             }
+            // Always reachable: a wrong host never fails outright, it just keeps retrying.
+            TextButton(onClick = onOpenSettings) { Text("Settings", color = Color.White) }
         }
     }
 }
